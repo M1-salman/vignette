@@ -11,5 +11,7 @@ export async function generateVideoScript(formData: FormData) {
 
   const structuredJson = await analyzeScreenshots(imageUrls, prompt);
 
-  return { imageUrls, scenes: structuredJson };
+  // The render server resolves screenshotIndex into imageUrls and randomly
+  // selects a local copyright-free track during the render job.
+  return { imageUrls, script: structuredJson };
 }
