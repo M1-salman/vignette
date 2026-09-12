@@ -34,6 +34,9 @@ function assertRenderRequest(value: unknown): asserts value is RenderRequest {
   if (request.imageUrls.length > 8 || request.script.totalDurationSeconds <= 0 || request.script.totalDurationSeconds > 30) {
     throw new Error("A demo must use 1–8 screenshots and be at most 30 seconds.");
   }
+  if (!['aurora', 'editorial', 'minimal', 'neon'].includes(request.script.visualStyle)) {
+    throw new Error("The script must include a supported visualStyle.");
+  }
   const lastEnd = request.script.scenes.reduce((latest, scene) => {
     if (!Number.isInteger(scene.screenshotIndex) || scene.screenshotIndex < 0 || scene.screenshotIndex >= request.imageUrls.length) {
       throw new Error("A scene references an invalid screenshotIndex.");
@@ -71,7 +74,9 @@ app.post("/api/render", async (request, response) => {
     assertRenderRequest(request.body);
     await mkdir(tempDirectory, { recursive: true });
     const musicTrack = await chooseMusicTrack();
-    const inputProps: DemoCompositionProps = { ...request.body, musicTrack };
+    // Gemini chooses the design family, while the variation makes repeated
+    // renders feel fresh even when the same prompt is submitted again.
+    const inputProps: DemoCompositionProps = { ...request.body, musicTrack, designVariation: Math.floor(Math.random() * 3) };
     const serveUrl = await getServeUrl();
     const composition = await selectComposition({
       serveUrl,
@@ -93,7 +98,7 @@ app.post("/api/render", async (request, response) => {
       public_id: `demo-${renderId}`,
       overwrite: false,
     });
-    response.status(201).json({ status: "completed", videoUrl: upload.secure_url, durationSeconds: inputProps.script.totalDurationSeconds });
+    response.status(201).json({ status: "completed", videoUrl: upload.secure_url, durationSeconds: inputProps.script.totalDurationSeconds, visualStyle: inputProps.script.visualStyle });
   } catch (error) {
     console.error("Render failed", error);
     response.status(400).json({ status: "failed", error: error instanceof Error ? error.message : "Unable to render video." });

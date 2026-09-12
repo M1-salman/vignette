@@ -12,6 +12,7 @@ export type DemoScene = {
 
 export type DemoScript = {
   version: "1";
+  visualStyle: "aurora" | "editorial" | "minimal" | "neon";
   totalDurationSeconds: number;
   scenes: DemoScene[];
 };
@@ -23,4 +24,5 @@ export type RenderRequest = {
 
 export type DemoCompositionProps = RenderRequest & {
   musicTrack: string;
+  designVariation: number;
 };

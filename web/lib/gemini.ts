@@ -2,8 +2,11 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
+export type VisualStyle = "aurora" | "editorial" | "minimal" | "neon";
+
 export type DemoScript = {
   version: "1";
+  visualStyle: VisualStyle;
   totalDurationSeconds: number;
   scenes: Array<{
     id: string;
@@ -22,9 +25,10 @@ export type DemoScript = {
 // URLs or music; the backend assigns those at render time.
 const DEMO_SCRIPT_SCHEMA = {
   type: "object", additionalProperties: false,
-  required: ["version", "totalDurationSeconds", "scenes"],
+  required: ["version", "visualStyle", "totalDurationSeconds", "scenes"],
   properties: {
     version: { type: "string", enum: ["1"] },
+    visualStyle: { type: "string", enum: ["aurora", "editorial", "minimal", "neon"] },
     totalDurationSeconds: { type: "number", minimum: 1, maximum: 30 },
     scenes: {
       type: "array", minItems: 1, maxItems: 8,
@@ -59,7 +63,7 @@ async function urlToInlineData(url: string): Promise<{ data: string; mimeType: s
 
 function assertDemoScript(value: unknown, screenshotCount: number): asserts value is DemoScript {
   const script = value as DemoScript;
-  if (!script || script.version !== "1" || !Array.isArray(script.scenes) || script.scenes.length === 0) {
+  if (!script || script.version !== "1" || !["aurora", "editorial", "minimal", "neon"].includes(script.visualStyle) || !Array.isArray(script.scenes) || script.scenes.length === 0) {
     throw new Error("Gemini returned a video script with an invalid top-level structure.");
   }
   const end = script.scenes.reduce((latest, scene) => {
@@ -83,7 +87,7 @@ The user request is: ${userPrompt}
 
 The attached images are screenshots indexed from 0 to ${imageUrls.length - 1} in attachment order.
 Return ONLY the schema-defined JSON. Create a coherent sequence using those screenshotIndex values.
-The final scene must end at or before 30 seconds. Do not return image URLs, pixel coordinates, UI-element labels, music, markdown, or fields not in the schema. focus.x and focus.y are normalized 0..1 values.`;
+The final scene must end at or before 30 seconds. Choose visualStyle to match the product: aurora for modern/SaaS, editorial for premium/professional, minimal for clean/productive, neon for bold/creator tools. Do not return image URLs, pixel coordinates, UI-element labels, music, markdown, or fields not in the schema. focus.x and focus.y are normalized 0..1 values.`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3.5-flash-lite",

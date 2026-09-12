@@ -13,7 +13,8 @@ export const DemoRoot = () => (
     defaultProps={{
       imageUrls: [],
       musicTrack: "music-1.mp3",
-      script: { version: "1", totalDurationSeconds: 1, scenes: [] },
+      designVariation: 0,
+      script: { version: "1", visualStyle: "aurora", totalDurationSeconds: 1, scenes: [] },
     }}
   />
 );
